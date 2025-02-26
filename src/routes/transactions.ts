@@ -36,14 +36,27 @@ export async function transactionsRoutes(app: FastifyInstance) {
 		};
 	});
 
-	app.post("/", async (req, reply) => {
+	app.post("/", async (request, reply) => {
 		const createTransactionBodySchema = z.object({
 			title: z.string(),
 			amount: z.number(),
 			type: z.enum(["credit", "debit"]),
 		});
 
-		const { title, amount, type } = createTransactionBodySchema.parse(req.body);
+		const { title, amount, type } = createTransactionBodySchema.parse(
+			request.body,
+		);
+
+		let sessionId = request.cookies.sessionIs;
+
+		if (!sessionId) {
+			sessionId = randomUUID();
+
+			reply.cookie("sessionId", sessionId, {
+				path: "/",
+				maxAge: 60 * 60 * 24 * 7,
+			});
+		}
 
 		await knex("transactions").insert({
 			id: randomUUID(),
